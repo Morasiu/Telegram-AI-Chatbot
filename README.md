@@ -5,7 +5,7 @@ It's a chatbot written using Tensorflow and Python
 
 1. Use `pipenv` to install dependencies
     ```bash
-    pipenv install
+    pipenv sync
     ```
     > It's about 1.5 GB so... be prepared.
 
