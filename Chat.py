@@ -1,27 +1,35 @@
-import itertools
+import itertools, os
+
+
+from utils.Config import Config
+config = Config()
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.tensorflow_logging_level
 
 import tensorflow as tf
 import tensorflow_addons as tfa
 import numpy
 import Trainer
 import utils.dataset_helper as dataset_helper
-from utils.Config import Config
 
-config = Config()
+##################################
+#
+# Simple example usage od an app.
+#
+##################################
+
 dataset = dataset_helper.get_dataset(False)
 my_tokenizer, _ = Trainer.get_tokenizer([x[1] for x in dataset])
+their_tokenizer, their_data = Trainer.get_tokenizer([x[0] for x in dataset])
+
+input_vocab_size = len(their_tokenizer.word_index) + 1
+output_vocab_size = len(my_tokenizer.word_index) + 1
+
+their_tensor_len = Trainer.max_len(their_data)
+
+encoderNetwork = Trainer.EncoderNetwork(input_vocab_size)
+decoderNetwork = Trainer.DecoderNetwork(output_vocab_size, their_tensor_len)
 
 def get_predictions(input):
-    their_tokenizer, their_data = Trainer.get_tokenizer([x[0] for x in dataset])
-
-    input_vocab_size = len(their_tokenizer.word_index) + 1
-    output_vocab_size = len(my_tokenizer.word_index) + 1
-    
-    their_tensor_len = Trainer.max_len(their_data)
-    
-    encoderNetwork = Trainer.EncoderNetwork(input_vocab_size)
-    decoderNetwork = Trainer.DecoderNetwork(output_vocab_size, their_tensor_len)
-
     #In this section we evaluate our model on a raw_input 
     #through the length of the model, for this we use greedsampler to run through the decoder
     #and the final embedding matrix trained on the data is used to generate embeddings
@@ -91,8 +99,8 @@ def get_predictions(input):
         seq = list(itertools.takewhile( lambda index: index !=2, line))
         
         responses = (" ".join( [my_tokenizer.index_word[w] for w in seq])).split("<end>")
-        # responses = [x for x in responses if x.strip()]
-        # responses = list(dict.fromkeys(responses))
+        responses = [x for x in responses if x.strip()]
+        responses = list(dict.fromkeys(responses))
         # for response in responses:
         #     response = response.strip().capitalize() 
         #     response = "> " + response
@@ -107,25 +115,17 @@ def get_predictions(input):
     #     conversation_file.write(conversation)
 
 def conversation(mess, predictions):
-    #prediction based on our sentence earlier
     conversation = "\n============================\n"
     conversation =  conversation + "You: " + mess + "\n"
     conversation = conversation + "\nAI:\n"
 
-    responses = []
-    for i in range(len(predictions)):
-        line = predictions[i]
-        seq = list(itertools.takewhile( lambda index: index !=2, line))
-        
-        responses = (" ".join( [my_tokenizer.index_word[w] for w in seq])).split("<end>")
-        responses = [x for x in responses if x.strip()]
-        responses = list(dict.fromkeys(responses))
-        for response in responses:
+    for response in predictions:
             response = response.strip().capitalize() 
             response = response.replace('xd', 'xD')
             response = "> " + response
             response += "\n"
             conversation += response
+
 
     conversation += "\n"
 
@@ -134,6 +134,8 @@ def conversation(mess, predictions):
     with open("conversation.txt", "a", encoding="UTF-8") as conversation_file:
         conversation_file.write(conversation)
 
+
+Trainer.load_checkpoint(Trainer.get_optimizer(), encoderNetwork, decoderNetwork)
 while True:
     mess = input("Write your message: ")
     predictions = get_predictions(mess)

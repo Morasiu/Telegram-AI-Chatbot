@@ -220,6 +220,16 @@ def get_tokenizer(data):
     data_their = tf.keras.preprocessing.sequence.pad_sequences(data_their, padding='post')
     return tokenizer, data_their
 
+def get_optimizer():
+    return tf.keras.optimizers.Adam()
+
+def load_checkpoint(optimizer, encoderNetwork, decoderNetwork):
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                    encoder=encoderNetwork,
+                                    decoder=decoderNetwork)
+    checkpoint.restore(tf.train.latest_checkpoint(config.checkpoint_dir)).expect_partial()
+    print("Checkpoint loaded.")
+
 if __name__ == "__main__":
     # Get data from dataset
     all_data = dataset_helper.get_dataset(True)
@@ -255,7 +265,7 @@ if __name__ == "__main__":
 
     encoderNetwork = EncoderNetwork(input_vocab_size)
     decoderNetwork = DecoderNetwork(output_vocab_size, x_tensor_len)
-    optimizer = tf.keras.optimizers.Adam()
+    optimizer = get_optimizer()
 
     checkpoint_prefix = os.path.join(config.checkpoint_dir, "ckpt")
     checkpoint = tf.train.Checkpoint(optimizer=optimizer,
@@ -276,7 +286,7 @@ if __name__ == "__main__":
             total_loss += batch_loss
 
             if (batch+1) % 5 == 0:
-                print(f"Total loss: {batch_loss.numpy()}. Epoch {i} Batch {batch + 1} ")
+                print(f"Total loss: {batch_loss.numpy():f}. Epoch {i} Batch {batch + 1} ")
 
         # saving (checkpoint) the model every 2 epochs
         if config.save_checkpoint:
