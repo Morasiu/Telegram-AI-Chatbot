@@ -33,7 +33,7 @@ class EncoderNetwork(tf.keras.Model):
     
 #DECODER
 class DecoderNetwork(tf.keras.Model):
-    def __init__(self,output_vocab_size):
+    def __init__(self, output_vocab_size, x_tensor_len):
         super().__init__()
         self.decoder_embedding = tf.keras.layers.Embedding(input_dim=output_vocab_size,
                                                            output_dim=config.embedding_dims) 
@@ -42,7 +42,7 @@ class DecoderNetwork(tf.keras.Model):
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
         # Create attention mechanism with memory = None
-        self.attention_mechanism = self.build_attention_mechanism(config.dense_units, None, config.batch_size * [x_tensot_len])
+        self.attention_mechanism = self.build_attention_mechanism(config.dense_units, None, config.batch_size * [x_tensor_len])
         self.rnn_cell =  self.build_rnn_cell(config.batch_size)
         self.decoder = tfa.seq2seq.BasicDecoder(self.rnn_cell, sampler= self.sampler,
                                                 output_layer=self.dense_layer)
@@ -68,7 +68,6 @@ def max_len(tensor):
     return max(len(t) for t in tensor)
 
 def loss_function(y_pred, y):
-   
     #shape of y [batch_size, ty]
     #shape of y_pred [batch_size, Ty, output_vocab_size] 
     sparsecategoricalcrossentropy = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
@@ -126,19 +125,19 @@ def train_step(input_batch, output_batch, encoder_initial_cell_state):
 
 #RNN LSTM hidden and memory state initializer
 def initialize_initial_state():
-    return [tf.zeros((config.batch_size, config.rnn_units)), tf.zeros((config.max_data_size, config.rnn_units))]
+    return [tf.zeros((config.batch_size, config.rnn_units)), tf.zeros((config.batch_size, config.rnn_units))]
 
-def get_predictions(input):
+def get_predictionsa(input):
     #In this section we evaluate our model on a raw_input 
     #through the length of the model, for this we use greedsampler to run through the decoder
     #and the final embedding matrix trained on the data is used to generate embeddings
-    input_raw= input 
+    input_raw = input
 
     # Preprocess
     input_lines = [('<start> '+input_raw+'').lower()]
     input_sequences = my_tokenizer.texts_to_sequences(input_lines)
     input_sequences = tf.keras.preprocessing.sequence.pad_sequences(input_sequences,
-                                                                    maxlen=x_tensot_len, 
+                                                                    maxlen=x_tensor_len,
                                                                     padding='post')
     inp = tf.convert_to_tensor(input_sequences)
     inference_batch_size = input_sequences.shape[0]
@@ -168,7 +167,7 @@ def get_predictions(input):
 
     # Since we do not know the target sequence lengths in advance, we use maximum_iterations to limit the translation lengths.
     # One heuristic is to decode up to two times the source sentence lengths.
-    maximum_iterations = tf.round(tf.reduce_max(x_tensot_len) * 2)
+    maximum_iterations = tf.round(tf.reduce_max(x_tensor_len) * 2)
 
     #initialize inference decoder
     decoder_embedding_matrix = decoderNetwork.decoder_embedding.variables[0] 
@@ -214,45 +213,40 @@ def get_predictions(input):
     with open("conversation.txt", "a", encoding="UTF-8") as conversation_file:
         conversation_file.write(conversation)
 
+def get_tokenizer(data):
+    tokenizer = tf.keras.preprocessing.text.Tokenizer(oov_token="<UKN>", filters='')
+    tokenizer.fit_on_texts(data)
+    data_their = tokenizer.texts_to_sequences(data)
+    data_their = tf.keras.preprocessing.sequence.pad_sequences(data_their, padding='post')
+    return tokenizer, data_their
+
 if __name__ == "__main__":
     # Get data from dataset
-    raw_data = dataset_helper.get_dataset(True)
-    # Limit data
-    data = raw_data[:config.max_data_size]
-
+    all_data = dataset_helper.get_dataset(True)
     # Create placeholder for list with their messages
-    raw_data_thier = list()
+    raw_data_their = list()
     # Create placeholder for list with my messages
     raw_data_my = list()
 
     # split data for mien and thier
-    for d in data:
-        raw_data_thier.append(d[0]), raw_data_my.append(d[1])
+    for d in all_data:
+        raw_data_their.append(d[0]), raw_data_my.append(d[1])
 
     # Create tokenizers
-    thier_tokenizer = tf.keras.preprocessing.text.Tokenizer(oov_token="<UKN>", filters='')
-    thier_tokenizer.fit_on_texts(raw_data_thier)
-
-    data_thier = thier_tokenizer.texts_to_sequences(raw_data_thier)
-    data_thier = tf.keras.preprocessing.sequence.pad_sequences(data_thier,padding='post')
-
-    my_tokenizer = tf.keras.preprocessing.text.Tokenizer(oov_token="<UKN>", filters='')
-    my_tokenizer.fit_on_texts(raw_data_my)
-
-    data_my = my_tokenizer.texts_to_sequences(raw_data_my)
-    data_my = tf.keras.preprocessing.sequence.pad_sequences(data_my,padding='post')
+    their_tokenizer, their_data = get_tokenizer(raw_data_their)
+    my_tokenizer, my_data = get_tokenizer(raw_data_my)
 
     # Split data for training
-    X_train, X_test, Y_train, Y_test = train_test_split(data_thier, data_my, test_size=0.2)
+    X_train, X_test, Y_train, Y_test = train_test_split(their_data, my_data, test_size=0.2)
 
     buffer_size = len(X_train)
     steps_per_epoch = buffer_size//config.batch_size
     Dtype = tf.float32   #used to initialize DecoderCell Zero state
 
-    x_tensot_len = max_len(data_thier)
-    y_tensor_len = max_len(data_my)  
+    x_tensor_len = max_len(their_data)
+    y_tensor_len = max_len(my_data)
 
-    input_vocab_size = len(thier_tokenizer.word_index) + 1  
+    input_vocab_size = len(their_tokenizer.word_index) + 1
     output_vocab_size = len(my_tokenizer.word_index) + 1
 
     # make dataset for training
@@ -260,7 +254,7 @@ if __name__ == "__main__":
     example_X, example_Y = next(iter(dataset))
 
     encoderNetwork = EncoderNetwork(input_vocab_size)
-    decoderNetwork = DecoderNetwork(output_vocab_size)
+    decoderNetwork = DecoderNetwork(output_vocab_size, x_tensor_len)
     optimizer = tf.keras.optimizers.Adam()
 
     checkpoint_prefix = os.path.join(config.checkpoint_dir, "ckpt")
@@ -294,6 +288,6 @@ if __name__ == "__main__":
         print("Epoch ended. Time: "  + str(round((end - start), 5)) + " s.")
         
         # Test model with random exmaple
-        if config.test_every_epoch:
-            random_exmaple = random.choice(config.examples)
-            get_predictions(random_exmaple)
+        # if config.test_every_epoch:
+        #     random_exmaple = random.choice(config.examples)
+        #     Chat.get_predictions(random_exmaple)8

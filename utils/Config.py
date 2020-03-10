@@ -18,3 +18,7 @@ class Config:
         self.test_every_epoch = config["test_every_epoch"]
         self.examples = config["examples"]
         self.save_checkpoint_for_epoch = config["save_checkpoint_for_epoch"]
+        self.epochs = config["epochs"]
+
+        # Set logging
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = self.tensorflow_logging_level

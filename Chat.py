@@ -1,14 +1,36 @@
+import itertools
+
+import tensorflow as tf
+import tensorflow_addons as tfa
+import numpy
+import Trainer
+import utils.dataset_helper as dataset_helper
+from utils.Config import Config
+
+config = Config()
+dataset = dataset_helper.get_dataset(False)
+my_tokenizer, _ = Trainer.get_tokenizer([x[1] for x in dataset])
+
 def get_predictions(input):
+    their_tokenizer, their_data = Trainer.get_tokenizer([x[0] for x in dataset])
+
+    input_vocab_size = len(their_tokenizer.word_index) + 1
+    output_vocab_size = len(my_tokenizer.word_index) + 1
+    
+    their_tensor_len = Trainer.max_len(their_data)
+    
+    encoderNetwork = Trainer.EncoderNetwork(input_vocab_size)
+    decoderNetwork = Trainer.DecoderNetwork(output_vocab_size, their_tensor_len)
+
     #In this section we evaluate our model on a raw_input 
     #through the length of the model, for this we use greedsampler to run through the decoder
     #and the final embedding matrix trained on the data is used to generate embeddings
     input_raw= input 
-
     # Preprocess
     input_lines = [('<start> '+input_raw+'').lower()]
     input_sequences = my_tokenizer.texts_to_sequences(input_lines)
     input_sequences = tf.keras.preprocessing.sequence.pad_sequences(input_sequences,
-                                                                    maxlen=x_tensot_len, 
+                                                                    maxlen=their_tensor_len,
                                                                     padding='post')
     inp = tf.convert_to_tensor(input_sequences)
     inference_batch_size = input_sequences.shape[0]
@@ -38,7 +60,7 @@ def get_predictions(input):
 
     # Since we do not know the target sequence lengths in advance, we use maximum_iterations to limit the translation lengths.
     # One heuristic is to decode up to two times the source sentence lengths.
-    maximum_iterations = tf.round(tf.reduce_max(x_tensot_len) * 2)
+    maximum_iterations = tf.round(tf.reduce_max(their_tensor_len) * 2)
 
     #initialize inference decoder
     decoder_embedding_matrix = decoderNetwork.decoder_embedding.variables[0] 
@@ -58,13 +80,41 @@ def get_predictions(input):
         outputs = numpy.expand_dims(outputs.sample_id,axis = -1)
         predictions = numpy.append(predictions, outputs, axis = -1)
 
-    #prediction based on our sentence earlier
-    conversation = "\n============================\n"
-    conversation =  conversation + "Ktoś: " + input_raw + "\n"
-    conversation = conversation + "\nHubertAI:\n"
+    # #prediction based on our sentence earlier
+    # conversation = "\n============================\n"
+    # conversation =  conversation + "Ktoś: " + input_raw + "\n"
+    # conversation = conversation + "\nHubertAI:\n"
 
+    responses = []
     for i in range(len(predictions)):
         line = predictions[i,:]
+        seq = list(itertools.takewhile( lambda index: index !=2, line))
+        
+        responses = (" ".join( [my_tokenizer.index_word[w] for w in seq])).split("<end>")
+        # responses = [x for x in responses if x.strip()]
+        # responses = list(dict.fromkeys(responses))
+        # for response in responses:
+        #     response = response.strip().capitalize() 
+        #     response = "> " + response
+        #     response += "\n"
+        #     conversation += response
+    return responses
+    # conversation += "\n"
+
+    # print(conversation)
+
+    # with open("conversation.txt", "a", encoding="UTF-8") as conversation_file:
+    #     conversation_file.write(conversation)
+
+def conversation(mess, predictions):
+    #prediction based on our sentence earlier
+    conversation = "\n============================\n"
+    conversation =  conversation + "You: " + mess + "\n"
+    conversation = conversation + "\nAI:\n"
+
+    responses = []
+    for i in range(len(predictions)):
+        line = predictions[i]
         seq = list(itertools.takewhile( lambda index: index !=2, line))
         
         responses = (" ".join( [my_tokenizer.index_word[w] for w in seq])).split("<end>")
@@ -83,3 +133,9 @@ def get_predictions(input):
 
     with open("conversation.txt", "a", encoding="UTF-8") as conversation_file:
         conversation_file.write(conversation)
+
+while True:
+    mess = input("Write your message: ")
+    predictions = get_predictions(mess)
+    conversation(mess, predictions)
+    

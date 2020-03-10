@@ -11,5 +11,5 @@
     "save_checkpoint_for_epoch": 2,
     "test_every_epoch": true,
     "examples": ["Hey", "How are you?"],
-    "tensorflow_logging_level": "2"
+    "tensorflow_logging_level": "4"
 }

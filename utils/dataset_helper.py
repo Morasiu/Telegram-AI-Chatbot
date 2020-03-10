@@ -2,6 +2,8 @@ import string, array, json, re, os, pickle
 from numpy import array
 from utils.Config import Config
 
+config = Config()
+
 def clean_sentences(lines: list) -> list:
     cleaned = list()
     re_print = re.compile('[^%s]' % re.escape(string.printable))
@@ -65,7 +67,6 @@ def get_pairs_from_file(path: str) -> list:
     return pairs
 
 def create_dataset():
-    config = Config()
     data_path = os.path.abspath(config.telegram_export_path)
     if not os.path.exists(data_path):
         raise ValueError(f'File {data_path} do not exist.')
@@ -84,4 +85,4 @@ def get_dataset(create_if_not_exist=False):
     with open("dataset.pkl", "rb") as dataset_file:
         raw_data = pickle.load(dataset_file)
     print(f"Loading completed. Messages: {len(raw_data)}")
-    return raw_data
+    return raw_data[:config.max_data_size]

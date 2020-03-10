@@ -1,6 +1,8 @@
 # Telegram-AI-Chatbot
 It's a chatbot written using Tensorflow and Python
 
+IN PROGRESS!
+
 ## How to
 
 1. Use `pipenv` to install dependencies
