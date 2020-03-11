@@ -6,10 +6,11 @@
     "embedding_dims": 256,
     "rnn_units": 1024,
     "dense_units": 1024,
+    "enable_special_char": false,
+    "max_message_length": 200,
     "checkpoint_dir": "./training_checkpoints",
     "save_checkpoint": true,
     "save_checkpoint_for_epoch": 2,
     "test_every_epoch": true,
-    "examples": ["Hey", "How are you?"],
-    "tensorflow_logging_level": "4"
+    "examples": ["Hey", "How are you?"]
 }

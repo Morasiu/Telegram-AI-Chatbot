@@ -11,13 +11,13 @@ def clean_sentences(lines: list) -> list:
     table = str.maketrans('', '', string.punctuation)
     for pair in lines:
         clean_pair = list()
-        if len(pair[0]) + len(pair[1]) > 200:
+        if len(pair[0]) + len(pair[1]) > config.max_mess_length:
             continue
         for line in pair:
 
             # normalizing unicode characters
-            # line = normalize('NFD', line).encode('ascii', 'ignore')
-            # line = line.decode('UTF-8')
+            if not config.enable_special_char:
+                line = line.encode('ascii', 'ignore').decode('ascii')
 
             # tokenize on white space
             line = line.split()

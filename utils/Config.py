@@ -7,7 +7,6 @@ class Config:
             config = json.load(json_file)
 
         self.telegram_export_path = config["telegram_export_path"]
-        self.tensorflow_logging_level = config["tensorflow_logging_level"]
         self.max_data_size = config["max_data_size"]
         self.batch_size = config["batch_size"]
         self.embedding_dims = config["embedding_dims"]
@@ -19,6 +18,7 @@ class Config:
         self.examples = config["examples"]
         self.save_checkpoint_for_epoch = config["save_checkpoint_for_epoch"]
         self.epochs = config["epochs"]
+        self.enable_special_char = config["enable_special_char"]
+        self.max_message_length = config["max_message_length"]
 
-        # Set logging
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = self.tensorflow_logging_level
+        print("config.json loaded.")
