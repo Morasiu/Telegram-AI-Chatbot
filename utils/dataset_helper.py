@@ -11,7 +11,7 @@ def clean_sentences(lines: list) -> list:
     table = str.maketrans('', '', string.punctuation)
     for pair in lines:
         clean_pair = list()
-        if len(pair[0]) + len(pair[1]) > config.max_mess_length:
+        if len(pair[0]) + len(pair[1]) > config.max_message_length:
             continue
         for line in pair:
 
@@ -38,7 +38,7 @@ def clean_sentences(lines: list) -> list:
             # store as string
             clean_pair.append(' '.join(line))
         cleaned.append(clean_pair)
-    print("CLEAN ===" + str(cleaned[0]) + "===")
+    print("CLEAN: |" + str(cleaned[0]) + "|")
     return array(cleaned)
 
 def get_pairs_from_file(path: str) -> list: 
@@ -63,7 +63,7 @@ def get_pairs_from_file(path: str) -> list:
                     their_mess = ""
             else:
                 their_mess = mess["text"]
-    print("EXAMPLE PAIR ===" + str(pairs[0]) + "===")
+    print("EXAMPLE PAIR: |" + str(pairs[0]) + "|")
     return pairs
 
 def create_dataset():

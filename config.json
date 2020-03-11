@@ -6,7 +6,7 @@
     "embedding_dims": 256,
     "rnn_units": 1024,
     "dense_units": 1024,
-    "enable_special_char": false,
+    "enable_special_char": true,
     "max_message_length": 200,
     "checkpoint_dir": "./training_checkpoints",
     "save_checkpoint": true,
