@@ -7,6 +7,7 @@ from Trainer import Trainer
 ######################
 # Example chat app
 ######################
+
 trainer = Trainer()
 trainer.load_checkpoint()
 
