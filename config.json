@@ -1,16 +1,16 @@
 {
     "telegram_export_path": "./result.json",
-    "max_data_size": 40000,
-    "batch_size": 64,
+    "max_data_size": 73680,
+    "batch_size": 8,
     "epochs": 15,
     "embedding_dims": 256,
     "rnn_units": 1024,
     "dense_units": 1024,
     "enable_special_char": true,
-    "max_message_length": 200,
+    "max_message_length": 150,
     "checkpoint_dir": "./training_checkpoints",
     "save_checkpoint": true,
-    "save_checkpoint_for_epoch": 2,
+    "save_checkpoint_for_epoch": 1,
     "test_every_epoch": true,
-    "examples": ["Hey", "How are you?"]
-}
+    "examples": ["Ohayou", "Co tam"]
+} 

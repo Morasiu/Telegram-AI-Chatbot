@@ -128,3 +128,5 @@ dataset.pkl
 .idea/
 training_checkpoints/
 conversation.txt
+.vs/
+HxH/
