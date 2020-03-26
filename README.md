@@ -47,7 +47,7 @@ You can find recommended `congig.json` in this repo.
 
 ## FAQ
 
-1. What is you setup?
+1. What is your setup?
 
     I'm using Nvidia GTX 1070 tu train my model.
 
